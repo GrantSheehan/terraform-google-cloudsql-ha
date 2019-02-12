@@ -1,12 +1,9 @@
-locals {
-  name_prefix = "${var.general["name"]}-${var.general["env"]}-${var.general["region"]}"
-}
-
 # Master CloudSQL
 # https://www.terraform.io/docs/providers/google/r/sql_database_instance.html
 resource "google_sql_database_instance" "new_instance_sql_master" {
-  name             = "${local.name_prefix}-master"
+  name             = "${var.general["env"]}-db-master"
   region           = "${var.general["region"]}"
+  project          = "${var.general["project"]}"
   database_version = "${lookup(var.general, "db_version", "MYSQL_5_7")}"
 
   settings {
@@ -21,8 +18,9 @@ resource "google_sql_database_instance" "new_instance_sql_master" {
     user_labels                 = "${var.labels}"
 
     ip_configuration {
-      require_ssl  = "${lookup(var.master, "require_ssl", false)}"
-      ipv4_enabled = "${lookup(var.master, "ipv4_enabled", true)}"
+      ipv4_enabled    = "false"
+      require_ssl     = "${lookup(var.master, "require_ssl", false)}"
+      private_network = "${lookup(var.general, "private_network", "")}"
     }
 
     location_preference {
@@ -46,8 +44,9 @@ resource "google_sql_database_instance" "new_instance_sql_master" {
 # Replica CloudSQL
 # https://www.terraform.io/docs/providers/google/r/sql_database_instance.html
 resource "google_sql_database_instance" "new_instance_sql_replica" {
-  name                 = "${local.name_prefix}-replica"
+  name                 = "${var.general["env"]}-replica"
   region               = "${var.general["region"]}"
+  project              = "${var.general["project"]}"
   database_version     = "${lookup(var.general, "db_version", "MYSQL_5_7")}"
   master_instance_name = "${google_sql_database_instance.new_instance_sql_master.name}"
 
@@ -65,6 +64,11 @@ resource "google_sql_database_instance" "new_instance_sql_replica" {
     availability_type           = "ZONAL"
     authorized_gae_applications = "${var.authorized_gae_applications_replica}"
     crash_safe_replication      = true
+
+    ip_configuration {
+      require_ssl     = "${lookup(var.master, "require_ssl", false)}"
+      private_network = "${lookup(var.general, "private_network", "")}"
+    }
 
     location_preference {
       zone = "${var.general["region"]}-${var.replica["zone"]}"

@@ -1,6 +1,11 @@
 ###############################
 ##          MASTER           ##
 ###############################
+output "master_instance_name" {
+  value       = "${google_sql_database_instance.new_instance_sql_master.name}"
+  description = "The IPv4 address assigned for master"
+}
+
 output "master_instance_sql_ipv4" {
   value       = "${google_sql_database_instance.new_instance_sql_master.ip_address.0.ip_address}"
   description = "The IPv4 address assigned for master"
